@@ -45,18 +45,9 @@
 }
 
 body {
-  /* ¡Ya no necesitas el fondo azul aquí! 
-    Lo aplicamos en el <main> de page.tsx.
-    Esto te da más control por página.
-  */
+
 }
 
-/* ¡Todas tus clases personalizadas .cuadro-login, .titulo, etc.,
-  pueden ser eliminadas porque ahora las maneja Tailwind!
-*/
-
-/* ---break---
-  */
 
 :root {
   --radius: 0.625rem;

@@ -1,15 +1,17 @@
+"use client"; // <--- Añade esto para poder usar 'useState'
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, Package, Trello, Factory, ShoppingCart, BarChart2, Zap } from 'lucide-react'; // Iconos de https://lucide.dev/
-
+import { Home, Package, Factory, ShoppingCart, BarChart2, Zap } from 'lucide-react'; // Iconos de https://lucide.dev/
+import { useRouter } from 'next/navigation'; // <-- 1. Import useRouter
 /* Este es el "Sidebar" que definiste en app.py.
 Lo construimos con TailwindCSS.
 */
 function Sidebar() {
+
   return (
     <div className="fixed top-0 left-0 h-screen w-64 bg-gray-900 text-white p-5">
       {/* Logo de InventIA */}
-      <div className="flex justify-center mb-10">
+      <div className="flex justify-center mb-5">
         <Image 
           src="/inventia_logo.jpg" // Desde la carpeta /public
           alt="InventIA Logo" 
@@ -19,25 +21,28 @@ function Sidebar() {
         />
       </div>
 
-      <nav className="flex flex-col gap-4">
+      <nav className="flex flex-col gap-3">
         {/* Esto reemplaza st.sidebar.radio */}
         <Link href="/dashboard" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700">
-          <Home size={20} /> 🏠 Dashboard
+          <Home size={20} />Dashboard
         </Link>
         <Link href="/dashboard/inventario" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700">
-          <Package size={20} /> 📦 Inventario Central
+          <Package size={20} />Inventario Central
         </Link>
         <Link href="/dashboard/produccion" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700">
-          <Factory size={20} /> 🧵 Producción
+          <Factory size={20} />Producción
         </Link>
-        <Link href="#" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 opacity-50">
-          <ShoppingCart size={20} /> 🛒 Órdenes/Ventas
+        <Link href="#" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700">
+          <ShoppingCart size={20} />Órdenes/Ventas
         </Link>
-        <Link href="#" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 opacity-50">
-          <BarChart2 size={20} /> 🤖 IA Sugerencias
+        <Link href="#" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700">
+          <BarChart2 size={20} />IA Sugerencias
         </Link>
-        <Link href="#" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 opacity-50">
-          <Zap size={20} /> 🔗 Integraciones
+        <Link href="#" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700">
+          <Zap size={20} />Integraciones
+        </Link>
+        <Link href="#" className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700">
+          <Zap size={20} />Cerrar Sesión
         </Link>
       </nav>
 
@@ -65,6 +70,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  
   return (
     <div className="flex">
       <Sidebar />

@@ -1,22 +1,30 @@
 "use client"; // <--- Añade esto para poder usar 'useState'
 
 import { useState } from 'react'; // <--- Importa useState
+import { useRouter } from 'next/navigation'; // <-- 1. Import useRouter
 
 export default function Home() {
   // --- PASO 2: Añadir estado para manejar los inputs ---
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter(); // <-- Initialize the router
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Previene que la página se recargue
+    e.preventDefault();
+    console.log('Simulating login with:');
     console.log('Email:', email);
     console.log('Password:', password);
-    // Aquí es donde en el futuro llamarás a tu API de FastAPI
+
+    // --- 2. Navigate to the dashboard ---
+    // In the future, you'll only do this AFTER
+    // successfully verifying credentials with your FastAPI backend.
+    router.push('/dashboard');
+    // --- End of navigation ---
   };
 
   return (
     // Usamos flexbox para centrar todo en la pantalla
-    <main className="flex min-h-screen items-center justify-center bg-[#0f2c47]">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#0f2c47] to-gray-400">
       <div className="bg-white p-12 rounded-lg shadow-xl w-full max-w-md">
         <div className="text-center font-bold text-3xl mb-8">
           <h1>Bienvenido a InventIA</h1>
