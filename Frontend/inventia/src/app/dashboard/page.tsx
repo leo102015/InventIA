@@ -23,7 +23,7 @@ function KpiCard({ title, value, subtext, delta, deltaColor = "normal" }: {
         <div className="text-2xl font-bold">{value}</div>
         <p className="text-xs text-gray-500">{subtext}</p>
         {delta && (
-          <p className={`text-xs ${colorClass}`}>{delta}% {deltaColor === "inverse" ? "above target" : "from last month"}</p>
+          <p className={`text-xs ${colorClass}`}>{delta}% {deltaColor === "inverse" ? "above target" : "desde el último mes"}</p>
         )}
       </CardContent>
     </Card>
