@@ -1,69 +1,73 @@
-"use client"; // <--- Añade esto para poder usar 'useState'
+"use client";
 
-import { useState } from 'react'; // <--- Importa useState
-import { useRouter } from 'next/navigation'; // <-- 1. Import useRouter
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react'; // Importamos los iconos
 
 export default function Home() {
-  // --- PASO 2: Añadir estado para manejar los inputs ---
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter(); // <-- Initialize the router
+  const [showPassword, setShowPassword] = useState(false); // Estado para el toggle
+  const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Simulating login with:');
     console.log('Email:', email);
     console.log('Password:', password);
-
-    // --- 2. Navigate to the dashboard ---
-    // In the future, you'll only do this AFTER
-    // successfully verifying credentials with your FastAPI backend.
     router.push('/dashboard');
-    // --- End of navigation ---
   };
 
   return (
-    // Usamos flexbox para centrar todo en la pantalla
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#0f2c47] to-gray-400">
-      <div className="bg-white p-12 rounded-lg shadow-xl w-full max-w-md">
+    <main className="flex min-h-screen items-center justify-center bg-[#0f2c47] p-4">
+      <div className="bg-white p-8 sm:p-12 rounded-lg shadow-xl w-full max-w-md">
         <div className="text-center font-bold text-3xl mb-8">
           <h1>Bienvenido a InventIA</h1>
         </div>
-
         <div>
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
             
-            {/* Un div para el grupo de email */}
+            {/* Grupo de Email */}
             <div className="flex flex-col">
               <label htmlFor="email" className="mb-1 font-medium">Email:</label>
-              <input 
-                type="email" 
-                id="email" 
-                name="email" 
-                required 
-                className="border border-gray-300 p-2 rounded-md" // Estilos de input
-                value={email} // Controla el valor con el estado
-                onChange={(e) => setEmail(e.target.value)} // Actualiza el estado
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                className="border border-gray-300 p-2 rounded-md"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
-            {/* Un div para el grupo de contraseña */}
+            {/* Grupo de Contraseña con Toggle */}
             <div className="flex flex-col">
               <label htmlFor="password" className="mb-1 font-medium">Contraseña:</label>
-              <input 
-                type="password" 
-                id="password" 
-                name="password" 
-                required 
-                className="border border-gray-300 p-2 rounded-md"
-                value={password} // Controla el valor con el estado
-                onChange={(e) => setPassword(e.target.value)} // Actualiza el estado
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"} // Tipo dinámico
+                  id="password"
+                  name="password"
+                  required
+                  className="border border-gray-300 p-2 rounded-md w-full pr-10" // Padding a la derecha
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button" // Previene que el form se envíe
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-600"
+                  onClick={() => setShowPassword(!showPassword)} // Cambia el estado
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
             
+            {/* Botón de Submit */}
             <div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="w-full p-3 rounded-lg bg-[#0f2c47] text-white font-bold cursor-pointer hover:bg-[#1c4469] transition-colors">
                 Iniciar Sesión
               </button>
