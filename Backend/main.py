@@ -6,7 +6,7 @@ from typing import Annotated, Generator
 from datetime import datetime, timedelta, timezone
 
 # --- Importaciones de Seguridad ---
-import jwt
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 # --- Importaciones de Base de Datos ---
