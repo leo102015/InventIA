@@ -24,7 +24,7 @@ export default function Home() {
     formBody.append('password', password);
 
     try {
-      const response = await fetch('http://localhost:8000/token', {
+      const response = await fetch('http://127.0.0.1:8000/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -43,8 +43,8 @@ export default function Home() {
       
       console.log('Login exitoso, token:', data.access_token);
       
-      // Aquí guardarías el token (en localStorage, cookies, o un state manager)
-      // localStorage.setItem('token', data.access_token);
+      // Guardamos el token en el localStorage del navegador
+      localStorage.setItem('inventia_token', data.access_token);
 
       // Redirige al dashboard
       router.push('/dashboard');
@@ -52,7 +52,9 @@ export default function Home() {
     } catch (err: any) {
       // Muestra el error al usuario
       setError(err.message || 'Error al intentar iniciar sesión. Intenta de nuevo.');
-      setIsLoading(false);
+      
+    } finally {
+      setIsLoading(false); // Quita el estado de carga
     }
   };
 
@@ -126,4 +128,3 @@ export default function Home() {
     </main>
   );
 }
-
