@@ -1,0 +1,47 @@
+# =========================================================
+# FRONTEND (carpeta inventia)
+# =========================================================
+
+frontend/inventia/node_modules/
+frontend/inventia/.pnp
+frontend/inventia/.pnp.*
+frontend/inventia/.yarn/*
+!frontend/inventia/.yarn/patches
+!frontend/inventia/.yarn/plugins
+!frontend/inventia/.yarn/releases
+!frontend/inventia/.yarn/versions
+
+frontend/inventia/coverage
+frontend/inventia/.next/
+frontend/inventia/out/
+frontend/inventia/build
+
+frontend/inventia/.DS_Store
+frontend/inventia/*.pem
+
+frontend/inventia/npm-debug.log*
+frontend/inventia/yarn-debug.log*
+frontend/inventia/yarn-error.log*
+frontend/inventia/.pnpm-debug.log*
+
+frontend/inventia/.env*
+frontend/inventia/.vercel
+
+frontend/inventia/*.tsbuildinfo
+frontend/inventia/next-env.d.ts
+
+# =========================================================
+# BACKEND (nuevo)
+# =========================================================
+Backend/venv/
+Backend/__pycache__/
+Backend/*.pyc
+Backend/*/__pycache__/
+Backend/**/*.pyc
+
+# =========================================================
+# GLOBAL ignores
+# =========================================================
+.DS_Store
+.env*
+*.log
