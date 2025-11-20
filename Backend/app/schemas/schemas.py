@@ -214,3 +214,44 @@ class ProductoReventaUpdate(BaseModel):
 
 class BOMUpdate(BaseModel):
     cantidadRequerida: float
+
+# --- Auxiliares para Venta ---
+class CanalVentaResponse(BaseModel):
+    id: int
+    nombre: str
+    class Config:
+        from_attributes = True
+
+# --- Detalle Venta ---
+class DetalleVentaBase(BaseModel):
+    cantidad: int
+    precioUnitario: float
+    variante_producto_id: Optional[int] = None
+    producto_reventa_id: Optional[int] = None
+
+class DetalleVentaCreate(DetalleVentaBase):
+    pass
+
+class DetalleVentaResponse(DetalleVentaBase):
+    id: int
+    # Usamos esquemas que ya definiste antes o forward references
+    variante: Optional['VarianteResponse'] = None 
+    producto_reventa: Optional['ProductoReventaResponse'] = None
+    class Config:
+        from_attributes = True
+
+# --- Orden Venta ---
+class OrdenVentaCreate(BaseModel):
+    canal_venta_id: int
+    estado: str = "Pagada"
+    detalles: List[DetalleVentaCreate]
+
+class OrdenVentaResponse(BaseModel):
+    id: int
+    fecha: datetime
+    estado: str
+    canal: Optional[CanalVentaResponse] = None
+    detalles: List[DetalleVentaResponse] = []
+    
+    class Config:
+        from_attributes = True

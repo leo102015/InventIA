@@ -120,3 +120,38 @@ class OrdenProduccion(Base):
     variante_producto_id = Column("variante_producto_id", Integer, ForeignKey("varianteproducto.id"), nullable=False)
 
     variante = relationship("VarianteProducto")
+
+# --- Canales de Venta ---
+class CanalVenta(Base):
+    __tablename__ = "canalventa"
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(100), unique=True, nullable=False)
+
+# --- Orden de Venta ---
+class OrdenVenta(Base):
+    __tablename__ = "ordenventa"
+    id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(TIMESTAMP, server_default=func.now(), nullable=False)
+    estado = Column(String(50), nullable=False, default='Pagada') # 'Pagada', 'En Producción', 'Enviada'
+    canal_venta_id = Column("canal_venta_id", Integer, ForeignKey("canalventa.id"), nullable=False)
+    usuario_id = Column("usuario_id", Integer, ForeignKey("usuario.id"), nullable=True)
+
+    canal = relationship("CanalVenta")
+    usuario = relationship("Usuario")
+    detalles = relationship("DetalleOrdenVenta", back_populates="orden_venta", cascade="all, delete")
+
+# --- Detalle Orden de Venta ---
+class DetalleOrdenVenta(Base):
+    __tablename__ = "detalleordenventa"
+    id = Column(Integer, primary_key=True, index=True)
+    cantidad = Column(Integer, nullable=False)
+    precioUnitario = Column("preciounitario", DECIMAL(10, 2), nullable=False)
+    orden_venta_id = Column("orden_venta_id", Integer, ForeignKey("ordenventa.id"))
+
+    # Polimorfismo: Variante (Fabricado) O Producto Reventa
+    variante_producto_id = Column("variante_producto_id", Integer, ForeignKey("varianteproducto.id"), nullable=True)
+    producto_reventa_id = Column("producto_reventa_id", Integer, ForeignKey("productoreventa.id"), nullable=True)
+
+    orden_venta = relationship("OrdenVenta", back_populates="detalles")
+    variante = relationship("VarianteProducto")
+    producto_reventa = relationship("ProductoReventa")
