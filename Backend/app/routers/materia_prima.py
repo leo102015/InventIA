@@ -34,3 +34,27 @@ def read_materia_prima_by_id(material_id: int, db: Session = Depends(get_db)):
     if material is None:
         raise HTTPException(status_code=404, detail="Material no encontrado")
     return material
+
+# NUEVO: Editar
+@router.put("/{id}", response_model=schemas.MateriaPrimaResponse)
+def update_materia_prima(id: int, material: schemas.MateriaPrimaUpdate, db: Session = Depends(get_db)):
+    db_mat = db.query(models.MateriaPrima).filter(models.MateriaPrima.id == id).first()
+    if not db_mat:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    
+    for key, value in material.model_dump(exclude_unset=True).items():
+        setattr(db_mat, key, value)
+    
+    db.commit()
+    db.refresh(db_mat)
+    return db_mat
+
+# NUEVO: Eliminar
+@router.delete("/{id}")
+def delete_materia_prima(id: int, db: Session = Depends(get_db)):
+    db_mat = db.query(models.MateriaPrima).filter(models.MateriaPrima.id == id).first()
+    if not db_mat:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
+    db.delete(db_mat)
+    db.commit()
+    return {"ok": True}

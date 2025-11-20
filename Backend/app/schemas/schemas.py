@@ -189,3 +189,28 @@ class OrdenProduccionResponse(OrdenProduccionBase):
     variante: Optional[VarianteResponse] = None
     class Config:
         from_attributes = True
+
+# --- ACTUALIZACIONES (NUEVO) ---
+class MateriaPrimaUpdate(BaseModel):
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+    costo: Optional[float] = None
+    unidadMedida: Optional[str] = None
+    stockActual: Optional[int] = None
+    proveedor_id: Optional[int] = None
+
+class ProductoFabricadoUpdate(BaseModel):
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+    precioVenta: Optional[float] = None
+
+class ProductoReventaUpdate(BaseModel):
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+    costoCompra: Optional[float] = None
+    precioVenta: Optional[float] = None
+    stockActual: Optional[int] = None
+    proveedor_id: Optional[int] = None
+
+class BOMUpdate(BaseModel):
+    cantidadRequerida: float

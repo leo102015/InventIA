@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, AlertTriangle, CheckCircle, Loader2, Factory, RefreshCw, Settings2 } from "lucide-react";
+import { PlusCircle, AlertTriangle, CheckCircle, Loader2, Factory, RefreshCw, Settings2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -154,6 +154,22 @@ export default function ProduccionPage() {
         }
     } catch (err) { console.error(err); } finally { setIsSaving(false); }
   };
+  const handleDeleteOrder = async (id: number) => {
+      if(!confirm("¿Cancelar esta orden de producción?")) return;
+      const token = localStorage.getItem("inventia_token");
+      try {
+          const res = await fetch(`http://127.0.0.1:8000/produccion/ordenes/${id}`, {
+              method: "DELETE",
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if(!res.ok) {
+              const err = await res.json();
+              alert(err.detail);
+          } else {
+              fetchData();
+          }
+      } catch(e) { console.error(e); }
+  };
 
   return (
     <section>
@@ -255,59 +271,45 @@ export default function ProduccionPage() {
       </div>
 
       <Tabs defaultValue="historial_lotes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="historial_lotes">Historial de Lotes</TabsTrigger>
-          <TabsTrigger value="cola_produccion" disabled>
-            <AlertTriangle className="mr-2 h-4 w-4 text-gray-400"/>
-            Cola de Pedidos (Próximamente)
-          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="historial_lotes" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Lotes de Producción Registrados</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Lotes de Producción</CardTitle></CardHeader>
             <CardContent>
-              {isLoading ? <div className="text-center py-4">Cargando...</div> :
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID Lote</TableHead>
-                    <TableHead>Producto</TableHead>
-                    <TableHead>Variante</TableHead>
-                    <TableHead>Cantidad</TableHead>
-                    <TableHead>Fecha Inicio</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acción</TableHead>
+                    {/* ... Headers ... */}
+                    <TableHead>ID Lote</TableHead><TableHead>Producto</TableHead><TableHead>Variante</TableHead><TableHead>Cantidad</TableHead><TableHead>Estado</TableHead><TableHead className="text-right">Acción</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {ordenes.map((lote) => (
                     <TableRow key={lote.id}>
                       <TableCell>#{lote.id}</TableCell>
-                      <TableCell className="font-medium">{lote.variante.producto_fabricado.nombre}</TableCell>
+                      <TableCell>{lote.variante.producto_fabricado.nombre}</TableCell>
                       <TableCell><Badge variant="outline">{lote.variante.talla} - {lote.variante.color}</Badge></TableCell>
                       <TableCell>{lote.cantidadProducida}</TableCell>
-                      <TableCell>{new Date(lote.fechaCreacion).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge variant={lote.estado === 'Terminado' ? 'default' : 'secondary'} className={lote.estado === 'En Proceso' ? "bg-blue-100 text-blue-800 hover:bg-blue-100" : ""}>
-                            {lote.estado}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
+                      <TableCell><Badge variant={lote.estado === 'Terminado' ? 'default' : 'secondary'}>{lote.estado}</Badge></TableCell>
+                      <TableCell className="text-right flex justify-end gap-2">
                         {lote.estado === 'En Proceso' && (
-                            <Button size="sm" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleFinishOrder(lote.id)}>
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Terminar
-                            </Button>
+                            <>
+                                <Button size="sm" variant="ghost" className="text-green-600" onClick={() => handleFinishOrder(lote.id)}>
+                                    <CheckCircle className="h-4 w-4 mr-1" /> Terminar
+                                </Button>
+                                <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteOrder(lote.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </>
                         )}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              }
             </CardContent>
           </Card>
         </TabsContent>

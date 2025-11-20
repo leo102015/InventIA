@@ -41,6 +41,30 @@ def create_producto_fabricado(
 def read_productos_fabricados(db: Session = Depends(get_db)):
     return db.query(models.ProductoFabricado).all()
 
+# NUEVO: Editar Fabricado
+@router.put("/fabricados/{id}", response_model=schemas.ProductoFabricadoResponse)
+def update_producto_fabricado(id: int, producto: schemas.ProductoFabricadoUpdate, db: Session = Depends(get_db)):
+    db_prod = db.query(models.ProductoFabricado).filter(models.ProductoFabricado.id == id).first()
+    if not db_prod:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    
+    for key, value in producto.model_dump(exclude_unset=True).items():
+        setattr(db_prod, key, value)
+    
+    db.commit()
+    db.refresh(db_prod)
+    return db_prod
+
+# NUEVO: Eliminar Fabricado
+@router.delete("/fabricados/{id}")
+def delete_producto_fabricado(id: int, db: Session = Depends(get_db)):
+    db_prod = db.query(models.ProductoFabricado).filter(models.ProductoFabricado.id == id).first()
+    if not db_prod:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    db.delete(db_prod)
+    db.commit()
+    return {"ok": True}
+
 # --- REVENTA ---
 @router.post("/reventa", response_model=schemas.ProductoReventaResponse)
 def create_producto_reventa(
@@ -57,3 +81,27 @@ def create_producto_reventa(
 @router.get("/reventa", response_model=List[schemas.ProductoReventaResponse])
 def read_productos_reventa(db: Session = Depends(get_db)):
     return db.query(models.ProductoReventa).all()
+
+# NUEVO: Editar Reventa
+@router.put("/reventa/{id}", response_model=schemas.ProductoReventaResponse)
+def update_producto_reventa(id: int, producto: schemas.ProductoReventaUpdate, db: Session = Depends(get_db)):
+    db_prod = db.query(models.ProductoReventa).filter(models.ProductoReventa.id == id).first()
+    if not db_prod:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    
+    for key, value in producto.model_dump(exclude_unset=True).items():
+        setattr(db_prod, key, value)
+    
+    db.commit()
+    db.refresh(db_prod)
+    return db_prod
+
+# NUEVO: Eliminar Reventa
+@router.delete("/reventa/{id}")
+def delete_producto_reventa(id: int, db: Session = Depends(get_db)):
+    db_prod = db.query(models.ProductoReventa).filter(models.ProductoReventa.id == id).first()
+    if not db_prod:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    db.delete(db_prod)
+    db.commit()
+    return {"ok": True}

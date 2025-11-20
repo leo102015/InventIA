@@ -62,6 +62,17 @@ def delete_bom_item(id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"ok": True}
 
+# NUEVO: Editar Cantidad BOM
+@router.put("/bom/{id}", response_model=schemas.BOMResponse)
+def update_bom_item(id: int, bom: schemas.BOMUpdate, db: Session = Depends(get_db)):
+    item = db.query(models.ListaMateriales).filter(models.ListaMateriales.id == id).first()
+    if not item: raise HTTPException(status_code=404, detail="Item no encontrado")
+    
+    item.cantidadRequerida = bom.cantidadRequerida
+    db.commit()
+    db.refresh(item)
+    return item
+
 # --- ÓRDENES DE PRODUCCIÓN ---
 @router.post("/ordenes", response_model=schemas.OrdenProduccionResponse)
 def create_orden(orden: schemas.OrdenProduccionCreate, db: Session = Depends(get_db)):
@@ -111,3 +122,16 @@ def terminar_orden(orden_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(orden)
     return orden
+
+# NUEVO: Eliminar (Cancelar) Orden Producción
+@router.delete("/ordenes/{id}")
+def delete_orden_produccion(id: int, db: Session = Depends(get_db)):
+    orden = db.query(models.OrdenProduccion).filter(models.OrdenProduccion.id == id).first()
+    if not orden: raise HTTPException(status_code=404, detail="Orden no encontrada")
+    
+    if orden.estado == "Terminado":
+        raise HTTPException(status_code=400, detail="No se puede eliminar una orden terminada (afectó stock).")
+    
+    db.delete(orden)
+    db.commit()
+    return {"ok": True}

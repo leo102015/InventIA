@@ -82,3 +82,19 @@ def recibir_orden_compra(
     db.commit()
     db.refresh(orden)
     return orden
+
+# NUEVO: Eliminar (Cancelar) Orden
+@router.delete("/{id}")
+def delete_orden_compra(id: int, db: Session = Depends(get_db)):
+    orden = db.query(models.OrdenCompra).filter(models.OrdenCompra.id == id).first()
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+    
+    if orden.estado == "Recibida":
+        raise HTTPException(status_code=400, detail="No se puede eliminar una orden ya recibida (afectó stock).")
+    
+    # Eliminar detalles primero (cascade suele manejarlo, pero por seguridad en lógica)
+    db.query(models.DetalleOrdenCompra).filter(models.DetalleOrdenCompra.orden_compra_id == id).delete()
+    db.delete(orden)
+    db.commit()
+    return {"ok": True}
