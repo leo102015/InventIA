@@ -18,7 +18,8 @@ import {
   PanelLeftOpen,
   Boxes,
   LayoutGrid,
-  User
+  User,
+  Hammer
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -37,6 +38,7 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { href: "/dashboard/inventario-producto", label: "Inventario Producto", icon: Package },
   { href: "/dashboard/inventario-materia", label: "Inventario Materia Prima", icon: Boxes },
+  { href: "/dashboard/lista-materiales", label: "Lista de Materiales (BOM)", icon: Hammer },
   { href: "/dashboard/produccion", label: "Producción", icon: Factory },
   { href: "/dashboard/sincronizacion", label: "Sincronización", icon: Zap },
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },

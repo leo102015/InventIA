@@ -127,3 +127,65 @@ class OrdenCompraResponse(OrdenCompraBase):
 
     class Config:
         from_attributes = True
+
+# --- Esquemas Auxiliares ---
+class MateriaPrimaSimple(BaseModel):
+    id: int
+    nombre: str
+    unidadMedida: str
+    class Config:
+        from_attributes = True
+
+class ProductoFabricadoSimple(BaseModel):
+    id: int
+    nombre: str
+    class Config:
+        from_attributes = True
+
+# --- Variantes ---
+class VarianteBase(BaseModel):
+    color: str
+    talla: str
+    stockActual: int = 0
+    producto_fabricado_id: int
+
+class VarianteCreate(VarianteBase):
+    pass
+
+class VarianteResponse(VarianteBase):
+    id: int
+    producto_fabricado: Optional[ProductoFabricadoSimple] = None
+    class Config:
+        from_attributes = True
+
+# --- BOM (Lista Materiales) ---
+class BOMBase(BaseModel):
+    cantidadRequerida: float
+    producto_fabricado_id: int
+    materia_prima_id: int
+
+class BOMCreate(BOMBase):
+    pass
+
+class BOMResponse(BOMBase):
+    id: int
+    materia_prima: Optional[MateriaPrimaSimple] = None
+    class Config:
+        from_attributes = True
+
+# --- Orden Producción ---
+class OrdenProduccionBase(BaseModel):
+    cantidadProducida: int
+    variante_producto_id: int
+    estado: str = "En Proceso"
+
+class OrdenProduccionCreate(OrdenProduccionBase):
+    pass
+
+class OrdenProduccionResponse(OrdenProduccionBase):
+    id: int
+    fechaCreacion: datetime
+    fechaFinalizacion: Optional[datetime] = None
+    variante: Optional[VarianteResponse] = None
+    class Config:
+        from_attributes = True

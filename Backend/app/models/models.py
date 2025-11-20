@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DECIMAL, Text, TIMESTAMP, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DECIMAL, Text, TIMESTAMP, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -19,15 +19,16 @@ class Proveedor(Base):
     nombre = Column(String(255), nullable=False)
     contacto = Column(String(255))
 
-# --- Productos ---
+# --- Producto Fabricado (Actualización: agregar relación) ---
 class ProductoFabricado(Base):
     __tablename__ = "productofabricado"
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(255), nullable=False)
     descripcion = Column(Text)
-    precioVenta = Column("precioventa", DECIMAL(10, 2), nullable=False) # PostgreSQL suele bajar a minúsculas
+    precioVenta = Column("precioventa", DECIMAL(10, 2), nullable=False)
 
-    # Relación con variantes (se definirá cuando hagamos la tabla Variantes)
+    variantes = relationship("VarianteProducto", back_populates="producto_fabricado")
+    bom = relationship("ListaMateriales", back_populates="producto_fabricado")
 
 class ProductoReventa(Base):
     __tablename__ = "productoreventa"
@@ -83,3 +84,39 @@ class DetalleOrdenCompra(Base):
     orden_compra = relationship("OrdenCompra", back_populates="detalles")
     materia_prima = relationship("MateriaPrima")
     producto_reventa = relationship("ProductoReventa")
+
+# --- Variante de Producto (Talla/Color) ---
+class VarianteProducto(Base):
+    __tablename__ = "varianteproducto"
+    id = Column(Integer, primary_key=True, index=True)
+    color = Column(String(100))
+    talla = Column(String(50))
+    stockActual = Column("stockactual", Integer, nullable=False, default=0)
+    producto_fabricado_id = Column("producto_fabricado_id", Integer, ForeignKey("productofabricado.id"), nullable=False)
+
+    producto_fabricado = relationship("ProductoFabricado", back_populates="variantes")
+
+# --- Lista de Materiales (BOM - Receta) ---
+class ListaMateriales(Base):
+    __tablename__ = "listamateriales"
+    id = Column(Integer, primary_key=True, index=True)
+    cantidadRequerida = Column("cantidadrequerida", DECIMAL(10, 2), nullable=False)
+    producto_fabricado_id = Column("producto_fabricado_id", Integer, ForeignKey("productofabricado.id"), nullable=False)
+    materia_prima_id = Column("materia_prima_id", Integer, ForeignKey("materiaprima.id"), nullable=False)
+
+    producto_fabricado = relationship("ProductoFabricado", back_populates="bom")
+    materia_prima = relationship("MateriaPrima")
+
+    __table_args__ = (UniqueConstraint('producto_fabricado_id', 'materia_prima_id', name='_producto_materia_uc'),)
+
+# --- Orden de Producción ---
+class OrdenProduccion(Base):
+    __tablename__ = "ordenproduccion"
+    id = Column(Integer, primary_key=True, index=True)
+    fechaCreacion = Column("fechacreacion", TIMESTAMP, server_default=func.now(), nullable=False)
+    fechaFinalizacion = Column("fechafinalizacion", TIMESTAMP, nullable=True)
+    cantidadProducida = Column("cantidadproducida", Integer, nullable=False)
+    estado = Column(String(50), nullable=False, default='En Proceso') # 'En Proceso', 'Terminado'
+    variante_producto_id = Column("variante_producto_id", Integer, ForeignKey("varianteproducto.id"), nullable=False)
+
+    variante = relationship("VarianteProducto")
