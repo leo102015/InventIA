@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 
@@ -88,6 +89,41 @@ class MateriaPrimaCreate(MateriaPrimaBase):
 class MateriaPrimaResponse(MateriaPrimaBase):
     id: int
     proveedor: Optional['ProveedorResponse'] = None # Forward reference si es necesario
+
+    class Config:
+        from_attributes = True
+
+# --- Detalle Compra ---
+class DetalleCompraBase(BaseModel):
+    cantidad: int
+    costoUnitario: float
+    materia_prima_id: Optional[int] = None
+    producto_reventa_id: Optional[int] = None
+
+class DetalleCompraCreate(DetalleCompraBase):
+    pass
+
+class DetalleCompraResponse(DetalleCompraBase):
+    id: int
+    materia_prima: Optional['MateriaPrimaResponse'] = None
+    producto_reventa: Optional['ProductoReventaResponse'] = None
+    
+    class Config:
+        from_attributes = True
+
+# --- Orden Compra ---
+class OrdenCompraBase(BaseModel):
+    proveedor_id: int
+    estado: str = "Solicitada"
+
+class OrdenCompraCreate(OrdenCompraBase):
+    detalles: List[DetalleCompraCreate]
+
+class OrdenCompraResponse(OrdenCompraBase):
+    id: int
+    fecha: datetime
+    proveedor: Optional['ProveedorResponse'] = None
+    detalles: List[DetalleCompraResponse] = []
 
     class Config:
         from_attributes = True

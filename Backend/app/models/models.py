@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DECIMAL, Text, TIMESTAMP, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from app.core.database import Base
 
 # --- Usuarios (Ya existía) ---
@@ -53,3 +54,32 @@ class MateriaPrima(Base):
     proveedor_id = Column(Integer, ForeignKey("proveedor.id"))
 
     proveedor = relationship("Proveedor")
+
+# --- Orden de Compra ---
+class OrdenCompra(Base):
+    __tablename__ = "ordencompra"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(TIMESTAMP, server_default=func.now(), nullable=False)
+    estado = Column(String(50), nullable=False, default='Solicitada') # 'Solicitada', 'Recibida'
+    proveedor_id = Column(Integer, ForeignKey("proveedor.id"))
+
+    proveedor = relationship("Proveedor")
+    detalles = relationship("DetalleOrdenCompra", back_populates="orden_compra")
+
+# --- Detalle Orden de Compra ---
+class DetalleOrdenCompra(Base):
+    __tablename__ = "detalleordencompra"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cantidad = Column(Integer, nullable=False)
+    costoUnitario = Column("costounitario", DECIMAL(10, 2), nullable=False)
+    orden_compra_id = Column("orden_compra_id", Integer, ForeignKey("ordencompra.id"))
+    
+    # Polimorfismo: puede ser materia prima O producto de reventa
+    materia_prima_id = Column("materia_prima_id", Integer, ForeignKey("materiaprima.id"), nullable=True)
+    producto_reventa_id = Column("producto_reventa_id", Integer, ForeignKey("productoreventa.id"), nullable=True)
+
+    orden_compra = relationship("OrdenCompra", back_populates="detalles")
+    materia_prima = relationship("MateriaPrima")
+    producto_reventa = relationship("ProductoReventa")
