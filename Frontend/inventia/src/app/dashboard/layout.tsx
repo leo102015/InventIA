@@ -1,8 +1,8 @@
-"use client"; // Necesario para usar hooks como useState
+"use client"; // Necesario para usar hooks como useState y useRouter
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   Package,
@@ -17,12 +17,20 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Boxes,
-  LayoutGrid
+  LayoutGrid,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { cn } from '@/lib/utils'; // Asegúrate que este path es correcto
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { cn } from '@/lib/utils';
 
 // --- 1. Definición de los links del menú ---
 const navLinks = [
@@ -40,13 +48,22 @@ const navLinks = [
 // --- 2. Componente de Navegación (para reutilizar en móvil y desktop) ---
 function NavContent() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    // 1. Eliminar el token de seguridad
+    localStorage.removeItem('inventia_token');
+    // 2. Redirigir al login
+    router.push('/');
+  };
+
   return (
     <nav className="flex flex-col gap-2 p-4">
       {navLinks.map((link) => (
         <Button
           key={link.label}
           asChild
-          variant={pathname === link.href ? "secondary" : "ghost"} // Resalta el link activo
+          variant={pathname === link.href ? "secondary" : "ghost"}
           className="justify-start gap-3"
         >
           <Link href={link.href}>
@@ -56,15 +73,15 @@ function NavContent() {
         </Button>
       ))}
       <hr className="my-4 border-gray-700" />
+      
+      {/* Botón Cerrar Sesión con lógica funcional */}
       <Button
-        asChild
         variant="ghost"
-        className="justify-start gap-3 text-red-500 hover:text-red-400"
+        className="justify-start gap-3 text-red-500 hover:text-red-400 hover:bg-red-950/30"
+        onClick={handleLogout}
       >
-        <Link href="/">
-          <LogOut size={20} />
-          <span className="truncate">Cerrar Sesión</span>
-        </Link>
+        <LogOut size={20} />
+        <span className="truncate">Cerrar Sesión</span>
       </Button>
     </nav>
   );
@@ -73,6 +90,13 @@ function NavContent() {
 // --- 3. Componente de Navegación (para reutilizar en móvil y desktop COLAPSADO) ---
 function NavContentCollapsed() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('inventia_token');
+    router.push('/');
+  };
+
   return (
     <nav className="flex flex-col gap-2 p-4 items-center">
       {navLinks.map((link) => (
@@ -81,7 +105,7 @@ function NavContentCollapsed() {
           asChild
           variant={pathname === link.href ? "secondary" : "ghost"}
           size="icon"
-          title={link.label} // Tooltip en hover
+          title={link.label}
         >
           <Link href={link.href}>
             <link.icon size={20} />
@@ -89,16 +113,16 @@ function NavContentCollapsed() {
         </Button>
       ))}
       <hr className="my-4 border-gray-700 w-full" />
+      
+      {/* Botón Cerrar Sesión Colapsado */}
       <Button
-        asChild
         variant="ghost"
         size="icon"
         title="Cerrar Sesión"
-        className="text-red-500 hover:text-red-400"
+        className="text-red-500 hover:text-red-400 hover:bg-red-950/30"
+        onClick={handleLogout}
       >
-        <Link href="/">
-          <LogOut size={20} />
-        </Link>
+        <LogOut size={20} />
       </Button>
     </nav>
   );
@@ -111,8 +135,14 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Estado para controlar la barra lateral en ESCRITORIO (colapsada o no)
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const router = useRouter();
+
+  // Función de logout para el menú del header también
+  const handleHeaderLogout = () => {
+    localStorage.removeItem('inventia_token');
+    router.push('/');
+  };
 
   return (
     <div className="flex min-h-screen w-full">
@@ -131,10 +161,8 @@ export default function DashboardLayout({
           />
         </div>
         
-        {/* Contenido de la navegación (cambia si está colapsado) */}
         {isCollapsed ? <NavContentCollapsed /> : <NavContent />}
 
-        {/* Botón para colapsar (solo en desktop) */}
         <div className="mt-auto p-4 border-t border-gray-700">
           <Button 
             onClick={() => setIsCollapsed(!isCollapsed)} 
@@ -147,22 +175,21 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* --- ÁREA DE CONTENIDO (Header Móvil + Contenido de página) --- */}
+      {/* --- ÁREA DE CONTENIDO --- */}
       <div className={cn(
         "flex flex-col flex-1 w-full transition-all duration-300",
-        isCollapsed ? "md:pl-20" : "md:pl-64" // Ajusta el margen izquierdo del contenido
+        isCollapsed ? "md:pl-20" : "md:pl-64"
       )}>
         
-        {/* --- HEADER (Móvil y Desktop) --- */}
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+        {/* --- HEADER --- */}
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6 shadow-sm">
           
-          {/* --- Botón de Menú (Móvil) --- */}
           <Sheet>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
-                className="shrink-0 md:hidden" // Oculto en desktop
+                className="shrink-0 md:hidden"
               >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
@@ -182,30 +209,39 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
           
-          {/* Título de la empresa (logo de Hadros) */}
-          <div className="flex-1">
+          <div className="flex-1 flex items-center gap-2">
             <Image
               src="/hadros_logo.jpg"
               alt="Hadros Logo"
               width={35}
               height={35}
               className="rounded-full"
-              title="Hadros Uniformes"
             />
+            <span className="font-semibold text-lg hidden sm:inline-block">Hadros Uniformes</span>
           </div>
 
-          {/* Menú de Usuario */}
+          {/* Menú de Usuario (Ahora funcional) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="rounded-full">
-                <span className="sr-only">Toggle user menu</span>
-                LP {/* Placeholder para iniciales de usuario */}
+              <Button variant="secondary" size="icon" className="rounded-full border-2 border-gray-200">
+                <User className="h-5 w-5" />
+                <span className="sr-only">Menú usuario</span>
               </Button>
-            </DropdownMenuTrigger>            
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Perfil</DropdownMenuItem>
+              <DropdownMenuItem>Configuración</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={handleHeaderLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
           </DropdownMenu>
         </header>
         
-        {/* --- CONTENIDO PRINCIPAL DE LA PÁGINA --- */}
         <main className="flex-1 p-4 md:p-8 bg-gray-100">
           {children}
         </main>

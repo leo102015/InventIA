@@ -1,0 +1,32 @@
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+
+# --- Esquemas de Token ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+# --- Esquemas de Usuario ---
+class UsuarioBase(BaseModel):
+    email: EmailStr
+    nombre: str
+    rol: str
+
+class UsuarioCreate(UsuarioBase):
+    password: str
+
+class UsuarioResponse(UsuarioBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+# --- Esquemas del Dashboard (Coinciden con tu Frontend interface DashboardStats) ---
+class DashboardStats(BaseModel):
+    ventas_netas: float
+    ordenes_pendientes: int
+    tiempo_proceso: str
+    canales_ok: str
