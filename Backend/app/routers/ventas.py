@@ -91,3 +91,38 @@ def delete_venta(id: int, db: Session = Depends(get_db)):
     db.delete(orden)
     db.commit()
     return {"ok": True}
+
+# --- CRUD CANALES ---
+@router.post("/canales", response_model=schemas.CanalVentaResponse)
+def create_canal(canal: schemas.CanalVentaCreate, db: Session = Depends(get_db)):
+    db_canal = models.CanalVenta(nombre=canal.nombre)
+    db.add(db_canal)
+    db.commit()
+    db.refresh(db_canal)
+    return db_canal
+
+@router.put("/canales/{id}", response_model=schemas.CanalVentaResponse)
+def update_canal(id: int, canal: schemas.CanalVentaUpdate, db: Session = Depends(get_db)):
+    db_canal = db.query(models.CanalVenta).filter(models.CanalVenta.id == id).first()
+    if not db_canal:
+        raise HTTPException(status_code=404, detail="Canal no encontrado")
+    
+    db_canal.nombre = canal.nombre
+    db.commit()
+    db.refresh(db_canal)
+    return db_canal
+
+@router.delete("/canales/{id}")
+def delete_canal(id: int, db: Session = Depends(get_db)):
+    db_canal = db.query(models.CanalVenta).filter(models.CanalVenta.id == id).first()
+    if not db_canal:
+        raise HTTPException(status_code=404, detail="Canal no encontrado")
+    
+    try:
+        db.delete(db_canal)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="No se puede eliminar: Hay ventas asociadas a este canal.")
+    
+    return {"ok": True}

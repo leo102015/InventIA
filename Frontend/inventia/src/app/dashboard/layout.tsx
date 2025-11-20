@@ -5,31 +5,12 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
-  Package,
-  Factory,
-  Zap,
-  ShoppingCart,
-  Truck,
-  Brain,
-  FileText,
-  LogOut,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Boxes,
-  LayoutGrid,
-  User,
-  Hammer
+  Package, Factory, Zap, ShoppingCart, Truck, Brain, FileText, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Boxes, LayoutGrid, User, Hammer, Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 
@@ -45,6 +26,7 @@ const navLinks = [
   { href: "/dashboard/compras", label: "Compras", icon: Truck },
   { href: "/dashboard/informes-ia", label: "Informes/IA", icon: Brain },
   { href: "/dashboard/reportes", label: "Reportes", icon: FileText },
+  { href: "/dashboard/administrar", label: "Administrar", icon: Settings },
 ];
 
 // --- 2. Componente de Navegación (para reutilizar en móvil y desktop) ---
@@ -60,7 +42,7 @@ function NavContent() {
   };
 
   return (
-    <nav className="flex flex-col gap-2 p-4">
+    <nav className="flex flex-col gap-2 p-3">
       {navLinks.map((link) => (
         <Button
           key={link.label}
@@ -151,14 +133,14 @@ export default function DashboardLayout({
       {/* --- BARRA LATERAL (Desktop) --- */}
       <aside className={cn(
         "hidden md:flex flex-col bg-gray-900 text-white fixed inset-y-0 left-0 z-10 transition-all duration-300",
-        isCollapsed ? "w-20" : "w-64"
+        isCollapsed ? "w-10" : "w-64"
       )}>
         <div className="flex items-center justify-center h-20 border-b border-gray-700">
           <Image
             src="/inventia_logo.jpg"
             alt="InventIA Logo"
-            width={isCollapsed ? 40 : 80}
-            height={isCollapsed ? 40 : 80}
+            width={isCollapsed ? 40 : 70}
+            height={isCollapsed ? 40 : 70}
             className="rounded-full transition-all duration-300"
           />
         </div>

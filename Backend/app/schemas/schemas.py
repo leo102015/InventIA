@@ -22,6 +22,13 @@ class UsuarioCreate(UsuarioBase):
 class UsuarioResponse(UsuarioBase):
     id: int
 
+# --- USUARIOS (Update) ---
+class UsuarioUpdate(BaseModel):
+    nombre: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None # Opcional para no obligar a cambiarla siempre
+    rol: Optional[str] = None
+
 # --- Proveedores ---
 class ProveedorBase(BaseModel):
     nombre: str
@@ -34,6 +41,11 @@ class ProveedorResponse(ProveedorBase):
     id: int
     class Config:
         from_attributes = True
+
+# --- PROVEEDORES (Update - Faltaba) ---
+class ProveedorUpdate(BaseModel):
+    nombre: Optional[str] = None
+    contacto: Optional[str] = None
 
 # --- Producto Fabricado ---
 class ProductoFabricadoBase(BaseModel):
@@ -255,3 +267,13 @@ class OrdenVentaResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+# --- CANALES DE VENTA (CRUD) ---
+class CanalVentaBase(BaseModel):
+    nombre: str
+
+class CanalVentaCreate(CanalVentaBase):
+    pass
+
+class CanalVentaUpdate(BaseModel):
+    nombre: str

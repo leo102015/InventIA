@@ -105,3 +105,34 @@ def delete_producto_reventa(id: int, db: Session = Depends(get_db)):
     db.delete(db_prod)
     db.commit()
     return {"ok": True}
+
+# NUEVO: Editar Proveedor
+@router.put("/proveedores/{id}", response_model=schemas.ProveedorResponse)
+def update_proveedor(id: int, proveedor: schemas.ProveedorUpdate, db: Session = Depends(get_db)):
+    db_prov = db.query(models.Proveedor).filter(models.Proveedor.id == id).first()
+    if not db_prov:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    for key, value in proveedor.model_dump(exclude_unset=True).items():
+        setattr(db_prov, key, value)
+    
+    db.commit()
+    db.refresh(db_prov)
+    return db_prov
+
+# NUEVO: Eliminar Proveedor
+@router.delete("/proveedores/{id}")
+def delete_proveedor(id: int, db: Session = Depends(get_db)):
+    db_prov = db.query(models.Proveedor).filter(models.Proveedor.id == id).first()
+    if not db_prov:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    try:
+        db.delete(db_prov)
+        db.commit()
+    except Exception:
+        # Capturar error de integridad (si el proveedor tiene productos asignados)
+        db.rollback()
+        raise HTTPException(status_code=400, detail="No se puede eliminar: El proveedor tiene productos o historial asociado.")
+    
+    return {"ok": True}
