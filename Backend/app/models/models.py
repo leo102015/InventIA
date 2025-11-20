@@ -39,3 +39,17 @@ class ProductoReventa(Base):
     proveedor_id = Column(Integer, ForeignKey("proveedor.id"))
 
     proveedor = relationship("Proveedor")
+
+# --- Materia Prima ---
+class MateriaPrima(Base):
+    __tablename__ = "materiaprima"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(255), nullable=False)
+    descripcion = Column(Text)
+    costo = Column(DECIMAL(10, 2), nullable=False)
+    unidadMedida = Column("unidadmedida", String(50), nullable=False) # ej. 'metros', 'unidades'
+    stockActual = Column("stockactual", Integer, nullable=False, default=0)
+    proveedor_id = Column(Integer, ForeignKey("proveedor.id"))
+
+    proveedor = relationship("Proveedor")

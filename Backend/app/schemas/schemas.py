@@ -72,3 +72,22 @@ class DashboardStats(BaseModel):
     ordenes_pendientes: int
     tiempo_proceso: str
     canales_ok: str
+
+# --- Materia Prima ---
+class MateriaPrimaBase(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+    costo: float
+    unidadMedida: str
+    stockActual: int
+    proveedor_id: Optional[int] = None
+
+class MateriaPrimaCreate(MateriaPrimaBase):
+    pass
+
+class MateriaPrimaResponse(MateriaPrimaBase):
+    id: int
+    proveedor: Optional['ProveedorResponse'] = None # Forward reference si es necesario
+
+    class Config:
+        from_attributes = True
