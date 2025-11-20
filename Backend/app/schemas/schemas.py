@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 
-# --- Esquemas de Token ---
+# --- Auth (Ya existía) ---
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -21,6 +21,48 @@ class UsuarioCreate(UsuarioBase):
 class UsuarioResponse(UsuarioBase):
     id: int
 
+# --- Proveedores ---
+class ProveedorBase(BaseModel):
+    nombre: str
+    contacto: Optional[str] = None
+
+class ProveedorCreate(ProveedorBase):
+    pass
+
+class ProveedorResponse(ProveedorBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+# --- Producto Fabricado ---
+class ProductoFabricadoBase(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+    precioVenta: float
+
+class ProductoFabricadoCreate(ProductoFabricadoBase):
+    pass
+
+class ProductoFabricadoResponse(ProductoFabricadoBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+# --- Producto Reventa ---
+class ProductoReventaBase(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+    costoCompra: float
+    precioVenta: float
+    stockActual: int
+    proveedor_id: Optional[int] = None
+
+class ProductoReventaCreate(ProductoReventaBase):
+    pass
+
+class ProductoReventaResponse(ProductoReventaBase):
+    id: int
+    proveedor: Optional[ProveedorResponse] = None
     class Config:
         from_attributes = True
 
