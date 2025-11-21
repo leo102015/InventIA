@@ -38,6 +38,15 @@ Backend/__pycache__/
 Backend/*.pyc
 Backend/*/__pycache__/
 Backend/**/*.pyc
+Backend/app/core/__pycache__/
+Backend/app/core/*.pyc
+Backend/app/models/__pycache__/
+Backend/app/models/*.pyc
+Backend/app/routes/__pycache__/
+Backend/app/routes/*.pyc
+Backend/app/schemas/__pycache__/
+Backend/app/schemas/*.pyc
+Backend/app/core/ai_service.py
 
 # =========================================================
 # GLOBAL ignores

@@ -277,3 +277,23 @@ class CanalVentaCreate(CanalVentaBase):
 
 class CanalVentaUpdate(BaseModel):
     nombre: str
+
+# --- IA & ANÁLISIS ---
+class ProductoAnalisis(BaseModel):
+    id: int
+    nombre: str
+    tipo: str
+    stock_actual: int
+    total_vendido: int
+    estado_stock: str # 'Crítico', 'Bajo', 'Normal', 'Exceso'
+    rotacion: str # 'Alta', 'Media', 'Baja', 'Nula'
+
+class SugerenciaIA(BaseModel):
+    titulo: str
+    descripcion: str
+    accion_sugerida: str # 'Descuento', 'Bundle', 'Reabastecer'
+    producto_objetivo: str
+
+class DashboardIAResponse(BaseModel):
+    analisis_productos: List[ProductoAnalisis]
+    sugerencias: List[SugerenciaIA]
