@@ -86,39 +86,52 @@ def create_orden(orden: schemas.OrdenProduccionCreate, db: Session = Depends(get
 def read_ordenes(db: Session = Depends(get_db)):
     return db.query(models.OrdenProduccion).order_by(models.OrdenProduccion.fechaCreacion.desc()).all()
 
+# Endpoint específico para flujo rápido (Terminar)
 @router.put("/ordenes/{orden_id}/terminar", response_model=schemas.OrdenProduccionResponse)
 def terminar_orden(orden_id: int, db: Session = Depends(get_db)):
-    orden = db.query(models.OrdenProduccion).filter(models.OrdenProduccion.id == orden_id).first()
-    if not orden:
-        raise HTTPException(status_code=404, detail="Orden no encontrada")
-    
-    if orden.estado == "Terminado":
-        raise HTTPException(status_code=400, detail="La orden ya está terminada")
+    # ... (Lógica original de terminar, reutilizada abajo en update)
+    return update_orden_produccion(orden_id, schemas.OrdenProduccionUpdate(estado="Terminado"), db)
 
-    # 1. Obtener la variante y su producto padre
-    variante = db.query(models.VarianteProducto).filter(models.VarianteProducto.id == orden.variante_producto_id).first()
-    producto_padre_id = variante.producto_fabricado_id
+# NUEVO: Editar Orden (Manejo de Reversión de Stock)
+@router.put("/ordenes/{id}", response_model=schemas.OrdenProduccionResponse)
+def update_orden_produccion(id: int, update: schemas.OrdenProduccionUpdate, db: Session = Depends(get_db)):
+    orden = db.query(models.OrdenProduccion).filter(models.OrdenProduccion.id == id).first()
+    if not orden: raise HTTPException(404, "Orden no encontrada")
 
-    # 2. Obtener la receta (BOM)
-    bom_list = db.query(models.ListaMateriales).filter(models.ListaMateriales.producto_fabricado_id == producto_padre_id).all()
+    estado_anterior = orden.estado
+    nuevo_estado = update.estado
 
-    # 3. Validar y Descontar Materia Prima
-    for item in bom_list:
-        cantidad_total_requerida = item.cantidadRequerida * orden.cantidadProducida
-        material = db.query(models.MateriaPrima).filter(models.MateriaPrima.id == item.materia_prima_id).first()
+    # 1. Lógica: En Proceso -> Terminado (Consumir Materia, Aumentar Producto)
+    if estado_anterior != "Terminado" and nuevo_estado == "Terminado":
+        variante = orden.variante
+        bom_list = db.query(models.ListaMateriales).filter(models.ListaMateriales.producto_fabricado_id == variante.producto_fabricado_id).all()
         
-        if material.stockActual < cantidad_total_requerida:
-            raise HTTPException(status_code=400, detail=f"No hay suficiente stock de {material.nombre}. Requerido: {cantidad_total_requerida}, Disponible: {material.stockActual}")
+        # Verificar y descontar materia prima
+        for item in bom_list:
+            req = item.cantidadRequerida * orden.cantidadProducida
+            if item.materia_prima.stockActual < req:
+                raise HTTPException(400, f"Stock insuficiente de {item.materia_prima.nombre}")
+            item.materia_prima.stockActual -= int(req)
         
-        material.stockActual -= int(cantidad_total_requerida) # Descontamos stock
+        variante.stockActual += orden.cantidadProducida
+        orden.fechaFinalizacion = datetime.now()
 
-    # 4. Aumentar stock del producto terminado (Variante)
-    variante.stockActual += orden.cantidadProducida
+    # 2. Lógica: Terminado -> En Proceso (Devolver Materia, Restar Producto)
+    elif estado_anterior == "Terminado" and nuevo_estado == "En Proceso":
+        variante = orden.variante
+        if variante.stockActual < orden.cantidadProducida:
+            raise HTTPException(400, "No se puede revertir: El producto fabricado ya fue vendido o movido.")
+        
+        variante.stockActual -= orden.cantidadProducida
+        
+        bom_list = db.query(models.ListaMateriales).filter(models.ListaMateriales.producto_fabricado_id == variante.producto_fabricado_id).all()
+        for item in bom_list:
+            devolver = item.cantidadRequerida * orden.cantidadProducida
+            item.materia_prima.stockActual += int(devolver)
+        
+        orden.fechaFinalizacion = None
 
-    # 5. Cerrar orden
-    orden.estado = "Terminado"
-    orden.fechaFinalizacion = datetime.now()
-
+    if nuevo_estado: orden.estado = nuevo_estado
     db.commit()
     db.refresh(orden)
     return orden
@@ -127,10 +140,17 @@ def terminar_orden(orden_id: int, db: Session = Depends(get_db)):
 @router.delete("/ordenes/{id}")
 def delete_orden_produccion(id: int, db: Session = Depends(get_db)):
     orden = db.query(models.OrdenProduccion).filter(models.OrdenProduccion.id == id).first()
-    if not orden: raise HTTPException(status_code=404, detail="Orden no encontrada")
+    if not orden: raise HTTPException(404, "Orden no encontrada")
     
+    # Si está terminada, revertir stock antes de borrar
     if orden.estado == "Terminado":
-        raise HTTPException(status_code=400, detail="No se puede eliminar una orden terminada (afectó stock).")
+        # Reutilizamos la lógica de reversión
+        variante = orden.variante
+        if variante.stockActual >= orden.cantidadProducida:
+            variante.stockActual -= orden.cantidadProducida
+            bom_list = db.query(models.ListaMateriales).filter(models.ListaMateriales.producto_fabricado_id == variante.producto_fabricado_id).all()
+            for item in bom_list:
+                item.materia_prima.stockActual += int(item.cantidadRequerida * orden.cantidadProducida)
     
     db.delete(orden)
     db.commit()

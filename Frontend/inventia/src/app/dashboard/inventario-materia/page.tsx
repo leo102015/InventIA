@@ -159,9 +159,9 @@ export default function InventarioMateriaPage() {
                           <TableCell>{m.proveedor ? m.proveedor.nombre : '-'}</TableCell>
                           <TableCell>${m.costo}</TableCell>
                           <TableCell>{m.stockActual} {m.unidadMedida}</TableCell>
-                          <TableCell className="text-right flex justify-end gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(m)}><Pencil className="w-4 h-4 text-orange-500"/></Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(m.id)}><Trash2 className="w-4 h-4 text-red-500"/></Button>
+                          <TableCell className="text-right flex justify-end gap-1">                            
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(m)}><Pencil className="w-4 h-4 text-orange-500"/></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(m.id)}><Trash2 className="w-4 h-4 text-red-500"/></Button>
                           </TableCell>
                       </TableRow>
                   ))}

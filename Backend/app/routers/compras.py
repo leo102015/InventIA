@@ -50,51 +50,51 @@ def read_ordenes_compra(db: Session = Depends(get_db)):
     return db.query(models.OrdenCompra).order_by(models.OrdenCompra.fecha.desc()).all()
 
 # --- Recibir Orden (Actualizar Stock) ---
-@router.put("/{orden_id}/recibir", response_model=schemas.OrdenCompraResponse)
-def recibir_orden_compra(
-    orden_id: int, 
-    db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(security.get_current_user)
-):
-    orden = db.query(models.OrdenCompra).filter(models.OrdenCompra.id == orden_id).first()
-    if not orden:
-        raise HTTPException(status_code=404, detail="Orden no encontrada")
-    
-    if orden.estado == "Recibida":
-        raise HTTPException(status_code=400, detail="Esta orden ya fue recibida")
+router.put("/{orden_id}/recibir", response_model=schemas.OrdenCompraResponse)
+def recibir_orden_compra(orden_id: int, db: Session = Depends(get_db)):
+    return update_orden_compra(orden_id, schemas.OrdenCompraUpdate(estado="Recibida"), db)
 
-    # Cambiar estado
-    orden.estado = "Recibida"
+# NUEVO: Editar Compra (Reversión Stock)
+@router.put("/{id}", response_model=schemas.OrdenCompraResponse)
+def update_orden_compra(id: int, update: schemas.OrdenCompraUpdate, db: Session = Depends(get_db)):
+    orden = db.query(models.OrdenCompra).filter(models.OrdenCompra.id == id).first()
+    if not orden: raise HTTPException(404, "Orden no encontrada")
 
-    # Actualizar Stocks
-    for detalle in orden.detalles:
-        if detalle.materia_prima_id:
-            mat = db.query(models.MateriaPrima).filter(models.MateriaPrima.id == detalle.materia_prima_id).first()
-            if mat:
-                mat.stockActual += detalle.cantidad
-                # Opcional: Actualizar costo promedio aquí si fuera necesario
-        
-        elif detalle.producto_reventa_id:
-            prod = db.query(models.ProductoReventa).filter(models.ProductoReventa.id == detalle.producto_reventa_id).first()
-            if prod:
-                prod.stockActual += detalle.cantidad
+    estado_ant = orden.estado
+    nuevo = update.estado
+
+    # 1. Solicitada -> Recibida (Aumentar Stock)
+    if estado_ant == "Solicitada" and nuevo == "Recibida":
+        for d in orden.detalles:
+            if d.materia_prima: d.materia_prima.stockActual += d.cantidad
+            if d.producto_reventa: d.producto_reventa.stockActual += d.cantidad
     
+    # 2. Recibida -> Solicitada (Disminuir Stock - Corrección de error)
+    elif estado_ant == "Recibida" and nuevo == "Solicitada":
+        for d in orden.detalles:
+            if d.materia_prima:
+                if d.materia_prima.stockActual < d.cantidad: raise HTTPException(400, "No se puede revertir: stock ya utilizado.")
+                d.materia_prima.stockActual -= d.cantidad
+            if d.producto_reventa:
+                if d.producto_reventa.stockActual < d.cantidad: raise HTTPException(400, "No se puede revertir: stock ya vendido.")
+                d.producto_reventa.stockActual -= d.cantidad
+
+    if nuevo: orden.estado = nuevo
     db.commit()
     db.refresh(orden)
     return orden
 
-# NUEVO: Eliminar (Cancelar) Orden
 @router.delete("/{id}")
 def delete_orden_compra(id: int, db: Session = Depends(get_db)):
     orden = db.query(models.OrdenCompra).filter(models.OrdenCompra.id == id).first()
-    if not orden:
-        raise HTTPException(status_code=404, detail="Orden no encontrada")
+    if not orden: raise HTTPException(404, "Orden no encontrada")
     
+    # Revertir stock si ya fue recibida
     if orden.estado == "Recibida":
-        raise HTTPException(status_code=400, detail="No se puede eliminar una orden ya recibida (afectó stock).")
-    
-    # Eliminar detalles primero (cascade suele manejarlo, pero por seguridad en lógica)
-    db.query(models.DetalleOrdenCompra).filter(models.DetalleOrdenCompra.orden_compra_id == id).delete()
+        for d in orden.detalles:
+            if d.materia_prima: d.materia_prima.stockActual -= d.cantidad
+            if d.producto_reventa: d.producto_reventa.stockActual -= d.cantidad
+
     db.delete(orden)
     db.commit()
     return {"ok": True}

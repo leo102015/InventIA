@@ -297,3 +297,16 @@ class SugerenciaIA(BaseModel):
 class DashboardIAResponse(BaseModel):
     analisis_productos: List[ProductoAnalisis]
     sugerencias: List[SugerenciaIA]
+
+class OrdenProduccionUpdate(BaseModel):
+    estado: Optional[str] = None
+    cantidadProducida: Optional[int] = None
+
+class OrdenCompraUpdate(BaseModel):
+    estado: Optional[str] = None
+    proveedor_id: Optional[int] = None
+
+class OrdenVentaUpdate(BaseModel):
+    estado: Optional[str] = None
+    canal_venta_id: Optional[int] = None
+    # No permitimos editar detalles por simplicidad en esta iteración, solo estado

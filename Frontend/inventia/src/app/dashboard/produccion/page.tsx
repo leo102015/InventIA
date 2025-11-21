@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, AlertTriangle, CheckCircle, Loader2, Factory, RefreshCw, Settings2, Trash2 } from "lucide-react";
+import { Eye, Pencil, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -57,6 +58,11 @@ export default function ProduccionPage() {
   // Formularios
   const [newOrder, setNewOrder] = useState({ variante_id: "", cantidad: "" });
   const [newVariant, setNewVariant] = useState({ producto_id: "", color: "", talla: "" });
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedOrden, setSelectedOrden] = useState<OrdenProduccion | null>(null);
+  const [editStatus, setEditStatus] = useState("");
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -169,6 +175,38 @@ export default function ProduccionPage() {
               fetchData();
           }
       } catch(e) { console.error(e); }
+  };
+
+  // Editar Estado
+  const handleEdit = (orden: OrdenProduccion) => {
+      setSelectedOrden(orden);
+      setEditStatus(orden.estado);
+      setEditDialogOpen(true);
+  };
+
+  const submitEdit = async () => {
+      if(!selectedOrden) return;
+      const token = localStorage.getItem("inventia_token");
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/produccion/ordenes/${selectedOrden.id}`, {
+            method: "PUT",
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ estado: editStatus })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            alert("Error: " + err.detail);
+        }
+      } catch (e) { console.error(e); }
+      setEditDialogOpen(false);
+      fetchData();
+  };
+
+  const handleDelete = async (id: number) => {
+      if (!confirm("¿Eliminar orden? Se revertirá el inventario si ya estaba terminada.")) return;
+      const token = localStorage.getItem("inventia_token");
+      await fetch(`http://127.0.0.1:8000/produccion/ordenes/${id}`, { method: "DELETE", headers: { 'Authorization': `Bearer ${token}` }});
+      fetchData();
   };
 
   return (
@@ -294,17 +332,16 @@ export default function ProduccionPage() {
                       <TableCell><Badge variant="outline">{lote.variante.talla} - {lote.variante.color}</Badge></TableCell>
                       <TableCell>{lote.cantidadProducida}</TableCell>
                       <TableCell><Badge variant={lote.estado === 'Terminado' ? 'default' : 'secondary'}>{lote.estado}</Badge></TableCell>
-                      <TableCell className="text-right flex justify-end gap-2">
-                        {lote.estado === 'En Proceso' && (
-                            <>
-                                <Button size="sm" variant="ghost" className="text-green-600" onClick={() => handleFinishOrder(lote.id)}>
-                                    <CheckCircle className="h-4 w-4 mr-1" /> Terminar
-                                </Button>
-                                <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteOrder(lote.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </>
-                        )}
+                      <TableCell className="text-right flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => {setSelectedOrden(lote); setDetailsDialogOpen(true);}}>
+                              <Eye className="h-4 w-4 text-blue-500"/>
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(lote)}>
+                              <Pencil className="h-4 w-4 text-orange-500"/>
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(lote.id)}>
+                              <Trash2 className="h-4 w-4 text-red-500"/>
+                          </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -314,6 +351,39 @@ export default function ProduccionPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader><DialogTitle>Cambiar Estado Lote #{selectedOrden?.id}</DialogTitle></DialogHeader>
+          <Select value={editStatus} onValueChange={setEditStatus}>
+              <SelectTrigger><SelectValue/></SelectTrigger>
+              <SelectContent>
+                  <SelectItem value="En Proceso">En Proceso</SelectItem>
+                  <SelectItem value="Terminado">Terminado</SelectItem>
+              </SelectContent>
+          </Select>
+          <p className="text-xs text-gray-500 mt-2">
+              {editStatus === "Terminado" ? "ℹ️ Se descontará materia prima y sumará producto." : "ℹ️ Se devolverá materia prima y restará producto."}
+          </p>
+          <Button onClick={submitEdit}>Actualizar</Button>
+      </DialogContent>
+  </Dialog>
+
+  {/* MODAL DETALLES */}
+  <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+      <DialogContent>
+          <DialogHeader><DialogTitle>Detalle de Producción</DialogTitle></DialogHeader>
+          {selectedOrden && (
+              <div className="grid gap-4">
+                  <h3 className="font-bold">{selectedOrden.variante.producto_fabricado.nombre}</h3>
+                  <p>Variante: {selectedOrden.variante.talla} / {selectedOrden.variante.color}</p>
+                  <p>Cantidad: {selectedOrden.cantidadProducida}</p>
+                  <p>Fecha: {new Date(selectedOrden.fechaCreacion).toLocaleString()}</p>
+                  <Badge>{selectedOrden.estado}</Badge>
+              </div>
+          )}
+      </DialogContent>
+  </Dialog>
     </section>
   );
 }

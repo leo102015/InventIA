@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, CheckCircle, Loader2, Trash2, ShoppingCart, Box, Layers } from "lucide-react";
+import { PlusCircle, CheckCircle, Loader2, Trash2, ShoppingCart, Box, Layers, Eye, Pencil } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -57,6 +57,16 @@ export default function ComprasPage() {
   const [itemId, setItemId] = useState("");
   const [itemQty, setItemQty] = useState("");
   const [itemCost, setItemCost] = useState("");
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<OrdenCompra | null>(null);
+  const [editStatus, setEditStatus] = useState("");
+
+  const handleEdit = (oc: OrdenCompra) => {
+      setSelectedOrder(oc);
+      setEditStatus(oc.estado);
+      setEditDialogOpen(true);
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -183,6 +193,24 @@ export default function ComprasPage() {
     } catch (err) {
         console.error(err);
     }
+  };
+
+  const submitEdit = async () => {
+      if(!selectedOrder) return;
+      const token = localStorage.getItem("inventia_token");
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/compras/${selectedOrder.id}`, {
+            method: "PUT",
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ estado: editStatus })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            alert("Error: " + err.detail);
+        }
+      } catch (e) { console.error(e); }
+      setEditDialogOpen(false);
+      fetchData();
   };
 
   const totalOrden = cart.reduce((acc, item) => acc + (item.cantidad * item.costo), 0);
@@ -350,6 +378,9 @@ export default function ComprasPage() {
                           </Button>
                         )}
                       </TableCell>
+                      <TableCell className="text-right flex justify-end gap-1">                                                    
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(oc)}><Pencil className="h-4 w-4 text-orange-500"/></Button>      
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -359,6 +390,19 @@ export default function ComprasPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader><DialogTitle>Editar Estado Compra</DialogTitle></DialogHeader>
+          <Select value={editStatus} onValueChange={setEditStatus}>
+              <SelectTrigger><SelectValue/></SelectTrigger>
+              <SelectContent>
+                  <SelectItem value="Solicitada">Solicitada</SelectItem>
+                  <SelectItem value="Recibida">Recibida</SelectItem>
+              </SelectContent>
+          </Select>
+          <Button onClick={submitEdit}>Actualizar</Button>
+      </DialogContent>
+  </Dialog>
     </section>
   );
 }

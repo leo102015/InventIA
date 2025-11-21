@@ -20,41 +20,30 @@ def create_venta(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(security.get_current_user)
 ):
-    # 1. Crear cabecera
+    # Estado inicial por defecto: En Proceso
+    estado_inicial = "En Proceso"
+    
     db_orden = models.OrdenVenta(
         canal_venta_id=orden.canal_venta_id,
-        estado=orden.estado,
+        estado=estado_inicial,
         usuario_id=current_user.id
     )
     db.add(db_orden)
     db.flush()
 
-    # 2. Procesar detalles y descontar stock
     for item in orden.detalles:
-        if not item.variante_producto_id and not item.producto_reventa_id:
-            raise HTTPException(400, "El detalle debe tener un producto asociado")
-
-        # A. Si es Variante (Fabricación)
+        # Descontar Stock (Lógica normal de venta)
         if item.variante_producto_id:
             variante = db.query(models.VarianteProducto).filter(models.VarianteProducto.id == item.variante_producto_id).first()
-            if not variante: raise HTTPException(404, "Variante no encontrada")
-            
             if variante.stockActual < item.cantidad:
-                raise HTTPException(400, f"Stock insuficiente para {variante.talla} {variante.color}. Disponible: {variante.stockActual}")
-            
+                raise HTTPException(400, f"Stock insuficiente: {variante.talla} {variante.color}")
             variante.stockActual -= item.cantidad
-
-        # B. Si es Producto Reventa
         elif item.producto_reventa_id:
             prod = db.query(models.ProductoReventa).filter(models.ProductoReventa.id == item.producto_reventa_id).first()
-            if not prod: raise HTTPException(404, "Producto no encontrado")
-            
             if prod.stockActual < item.cantidad:
-                raise HTTPException(400, f"Stock insuficiente para {prod.nombre}. Disponible: {prod.stockActual}")
-            
+                raise HTTPException(400, f"Stock insuficiente: {prod.nombre}")
             prod.stockActual -= item.cantidad
 
-        # Crear detalle
         db_detalle = models.DetalleOrdenVenta(
             orden_venta_id=db_orden.id,
             cantidad=item.cantidad,
@@ -68,25 +57,55 @@ def create_venta(
     db.refresh(db_orden)
     return db_orden
 
-# --- Listar Ventas ---
 @router.get("/", response_model=List[schemas.OrdenVentaResponse])
 def read_ventas(db: Session = Depends(get_db)):
     return db.query(models.OrdenVenta).order_by(models.OrdenVenta.fecha.desc()).all()
 
-# --- Eliminar (Cancelar) Venta y Devolver Stock ---
+# NUEVO: Editar Venta (Cambio de Estado y Devolución)
+@router.put("/{id}", response_model=schemas.OrdenVentaResponse)
+def update_venta(id: int, venta_update: schemas.OrdenVentaUpdate, db: Session = Depends(get_db)):
+    orden = db.query(models.OrdenVenta).filter(models.OrdenVenta.id == id).first()
+    if not orden: raise HTTPException(404, "Venta no encontrada")
+
+    estado_anterior = orden.estado
+    nuevo_estado = venta_update.estado
+
+    # Lógica de Devolución de Stock
+    if nuevo_estado == "Devolución" and estado_anterior != "Devolución":
+        # Reingresar stock
+        for d in orden.detalles:
+            if d.variante: d.variante.stockActual += d.cantidad
+            if d.producto_reventa: d.producto_reventa.stockActual += d.cantidad
+            # Visualmente el total será 0 en el frontend, pero mantenemos el registro del detalle
+    
+    # Lógica de Reactivación (Si estaba en devolución y vuelve a venderse)
+    if estado_anterior == "Devolución" and nuevo_estado != "Devolución":
+        # Descontar stock nuevamente
+        for d in orden.detalles:
+            if d.variante: 
+                if d.variante.stockActual < d.cantidad: raise HTTPException(400, "Stock insuficiente para reactivar venta")
+                d.variante.stockActual -= d.cantidad
+            if d.producto_reventa:
+                if d.producto_reventa.stockActual < d.cantidad: raise HTTPException(400, "Stock insuficiente para reactivar venta")
+                d.producto_reventa.stockActual -= d.cantidad
+
+    if venta_update.estado: orden.estado = venta_update.estado
+    if venta_update.canal_venta_id: orden.canal_venta_id = venta_update.canal_venta_id
+
+    db.commit()
+    db.refresh(orden)
+    return orden
+
 @router.delete("/{id}")
 def delete_venta(id: int, db: Session = Depends(get_db)):
     orden = db.query(models.OrdenVenta).filter(models.OrdenVenta.id == id).first()
     if not orden: raise HTTPException(404, "Venta no encontrada")
 
-    # Devolver stock
-    for item in orden.detalles:
-        if item.variante_producto_id:
-            var = db.query(models.VarianteProducto).filter(models.VarianteProducto.id == item.variante_producto_id).first()
-            if var: var.stockActual += item.cantidad
-        elif item.producto_reventa_id:
-            prod = db.query(models.ProductoReventa).filter(models.ProductoReventa.id == item.producto_reventa_id).first()
-            if prod: prod.stockActual += item.cantidad
+    # Si no es devolución, devolver stock al borrar
+    if orden.estado != "Devolución":
+        for item in orden.detalles:
+            if item.variante: item.variante.stockActual += item.cantidad
+            if item.producto_reventa: item.producto_reventa.stockActual += item.cantidad
 
     db.delete(orden)
     db.commit()
