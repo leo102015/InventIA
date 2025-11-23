@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
-from app.routers import auth, dashboard, productos, materia_prima, compras, produccion, ventas, reportes, usuarios, ia
+from app.routers import auth, dashboard, productos, materia_prima, compras, produccion, ventas, reportes, usuarios, ia, sincronizacion
 
 # Crear las tablas en la base de datos (si no existen)
 Base.metadata.create_all(bind=engine)
@@ -33,6 +33,7 @@ app.include_router(ventas.router)
 app.include_router(reportes.router)
 app.include_router(usuarios.router)
 app.include_router(ia.router)
+app.include_router(sincronizacion.router)
 
 @app.get("/")
 def read_root():

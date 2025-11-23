@@ -1,7 +1,6 @@
 -- Script de Creación de la Base de Datos "inventia_db"
--- compatible con PostgreSQL
+-- compatible con PostgreSQL / SQLite
 
--- Inicia una transacción. Si algo falla, no se crea nada.
 BEGIN;
 
 -- 1. Tabla de Usuarios
@@ -9,7 +8,7 @@ CREATE TABLE Usuario (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL, -- HASH de la contraseña
+    password_hash VARCHAR(255) NOT NULL,
     rol VARCHAR(50) NOT NULL CHECK (rol IN ('admin', 'operativo'))
 );
 
@@ -26,19 +25,19 @@ CREATE TABLE CanalVenta (
     nombre VARCHAR(100) UNIQUE NOT NULL
 );
 
--- 4. Tabla de Materia Prima (RF-04)
+-- 4. Tabla de Materia Prima
 CREATE TABLE MateriaPrima (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     descripcion TEXT,
     costo DECIMAL(10, 2) NOT NULL,
-    unidadMedida VARCHAR(50) NOT NULL, -- ej. 'metros', 'unidades', 'kg'
+    unidadMedida VARCHAR(50) NOT NULL,
     stockActual INT NOT NULL DEFAULT 0,
     proveedor_id INT,
     FOREIGN KEY (proveedor_id) REFERENCES Proveedor(id)
 );
 
--- 5. Tabla de Producto de Reventa (RF-05)
+-- 5. Tabla de Producto de Reventa
 CREATE TABLE ProductoReventa (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
@@ -47,10 +46,11 @@ CREATE TABLE ProductoReventa (
     precioVenta DECIMAL(10, 2) NOT NULL,
     stockActual INT NOT NULL DEFAULT 0,
     proveedor_id INT,
+    meli_id VARCHAR(50), -- NUEVO: ID de publicación en Mercado Libre
     FOREIGN KEY (proveedor_id) REFERENCES Proveedor(id)
 );
 
--- 6. Tabla de Producto Fabricado (Plantilla Base) (RF-06)
+-- 6. Tabla de Producto Fabricado (Plantilla Base)
 CREATE TABLE ProductoFabricado (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
@@ -59,18 +59,18 @@ CREATE TABLE ProductoFabricado (
 );
 
 -- 7. Tabla de Variantes de Producto
--- (El stock real de productos fabricados)
 CREATE TABLE VarianteProducto (
     id SERIAL PRIMARY KEY,
     color VARCHAR(100),
     talla VARCHAR(50),
     stockActual INT NOT NULL DEFAULT 0,
     producto_fabricado_id INT NOT NULL,
+    meli_id VARCHAR(50), -- NUEVO: ID de publicación en Mercado Libre
     FOREIGN KEY (producto_fabricado_id) REFERENCES ProductoFabricado(id)
         ON DELETE CASCADE
 );
 
--- 8. Tabla de Lista de Materiales (BOM - "Receta") (RF-07)
+-- 8. Tabla de Lista de Materiales (BOM)
 CREATE TABLE ListaMateriales (
     id SERIAL PRIMARY KEY,
     cantidadRequerida DECIMAL(10, 2) NOT NULL,
@@ -81,22 +81,22 @@ CREATE TABLE ListaMateriales (
     UNIQUE(producto_fabricado_id, materia_prima_id)
 );
 
--- 9. Tabla de Órdenes de Producción (RF-08)
+-- 9. Tabla de Órdenes de Producción
 CREATE TABLE OrdenProduccion (
     id SERIAL PRIMARY KEY,
     fechaCreacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fechaFinalizacion TIMESTAMP,
     cantidadProducida INT NOT NULL,
-    estado VARCHAR(50) NOT NULL, -- ej. 'En Proceso', 'Terminado'
+    estado VARCHAR(50) NOT NULL,
     variante_producto_id INT NOT NULL,
     FOREIGN KEY (variante_producto_id) REFERENCES VarianteProducto(id)
 );
 
--- 10. Tabla de Órdenes de Compra (RF-15)
+-- 10. Tabla de Órdenes de Compra
 CREATE TABLE OrdenCompra (
     id SERIAL PRIMARY KEY,
     fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado VARCHAR(50) NOT NULL, -- ej. 'Solicitada', 'Recibida'
+    estado VARCHAR(50) NOT NULL,
     proveedor_id INT,
     FOREIGN KEY (proveedor_id) REFERENCES Proveedor(id)
 );
@@ -107,25 +107,20 @@ CREATE TABLE DetalleOrdenCompra (
     cantidad INT NOT NULL,
     costoUnitario DECIMAL(10, 2) NOT NULL,
     orden_compra_id INT NOT NULL,
-    -- Polimorfismo: puede ser materia prima O producto de reventa
     materia_prima_id INT,
     producto_reventa_id INT,
     FOREIGN KEY (orden_compra_id) REFERENCES OrdenCompra(id) ON DELETE CASCADE,
     FOREIGN KEY (materia_prima_id) REFERENCES MateriaPrima(id),
-    FOREIGN KEY (producto_reventa_id) REFERENCES ProductoReventa(id),
-    CHECK (
-        (materia_prima_id IS NOT NULL AND producto_reventa_id IS NULL) OR
-        (materia_prima_id IS NULL AND producto_reventa_id IS NOT NULL)
-    )
+    FOREIGN KEY (producto_reventa_id) REFERENCES ProductoReventa(id)
 );
 
--- 12. Tabla de Órdenes de Venta (RF-13)
+-- 12. Tabla de Órdenes de Venta
 CREATE TABLE OrdenVenta (
     id SERIAL PRIMARY KEY,
     fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado VARCHAR(50) NOT NULL, -- ej. 'Pagada', 'En Producción', 'Enviada'
+    estado VARCHAR(50) NOT NULL,
     canal_venta_id INT NOT NULL,
-    usuario_id INT, -- El usuario que gestionó la orden (opcional)
+    usuario_id INT,
     FOREIGN KEY (canal_venta_id) REFERENCES CanalVenta(id),
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id)
 );
@@ -136,16 +131,11 @@ CREATE TABLE DetalleOrdenVenta (
     cantidad INT NOT NULL,
     precioUnitario DECIMAL(10, 2) NOT NULL,
     orden_venta_id INT NOT NULL,
-    -- Polimorfismo: puede ser una variante O un producto de reventa
     variante_producto_id INT,
     producto_reventa_id INT,
     FOREIGN KEY (orden_venta_id) REFERENCES OrdenVenta(id) ON DELETE CASCADE,
     FOREIGN KEY (variante_producto_id) REFERENCES VarianteProducto(id),
-    FOREIGN KEY (producto_reventa_id) REFERENCES ProductoReventa(id),
-    CHECK (
-        (variante_producto_id IS NOT NULL AND producto_reventa_id IS NULL) OR
-        (variante_producto_id IS NULL AND producto_reventa_id IS NOT NULL)
-    )
+    FOREIGN KEY (producto_reventa_id) REFERENCES ProductoReventa(id)
 );
 
 -- Inserta los canales de venta base
@@ -156,5 +146,4 @@ INSERT INTO CanalVenta (nombre) VALUES
 ('Amazon'),
 ('Temu');
 
--- Confirma todos los cambios
 COMMIT;

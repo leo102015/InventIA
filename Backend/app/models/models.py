@@ -30,6 +30,20 @@ class ProductoFabricado(Base):
     variantes = relationship("VarianteProducto", back_populates="producto_fabricado")
     bom = relationship("ListaMateriales", back_populates="producto_fabricado")
 
+# --- Variante de Producto (Talla/Color) ---
+class VarianteProducto(Base):
+    __tablename__ = "varianteproducto"
+    id = Column(Integer, primary_key=True, index=True)
+    color = Column(String(100))
+    talla = Column(String(50))
+    stockActual = Column("stockactual", Integer, nullable=False, default=0)
+    producto_fabricado_id = Column("producto_fabricado_id", Integer, ForeignKey("productofabricado.id"), nullable=False)
+    
+    # NUEVO: ID de publicación en Mercado Libre (Si es NULL, no está publicado)
+    meli_id = Column(String(50), nullable=True) 
+
+    producto_fabricado = relationship("ProductoFabricado", back_populates="variantes")
+
 class ProductoReventa(Base):
     __tablename__ = "productoreventa"
     id = Column(Integer, primary_key=True, index=True)
@@ -39,7 +53,8 @@ class ProductoReventa(Base):
     precioVenta = Column("precioventa", DECIMAL(10, 2), nullable=False)
     stockActual = Column("stockactual", Integer, nullable=False, default=0)
     proveedor_id = Column(Integer, ForeignKey("proveedor.id"))
-
+    # NUEVO: ID de publicación en Mercado Libre
+    meli_id = Column(String(50), nullable=True)
     proveedor = relationship("Proveedor")
 
 # --- Materia Prima ---
@@ -84,17 +99,6 @@ class DetalleOrdenCompra(Base):
     orden_compra = relationship("OrdenCompra", back_populates="detalles")
     materia_prima = relationship("MateriaPrima")
     producto_reventa = relationship("ProductoReventa")
-
-# --- Variante de Producto (Talla/Color) ---
-class VarianteProducto(Base):
-    __tablename__ = "varianteproducto"
-    id = Column(Integer, primary_key=True, index=True)
-    color = Column(String(100))
-    talla = Column(String(50))
-    stockActual = Column("stockactual", Integer, nullable=False, default=0)
-    producto_fabricado_id = Column("producto_fabricado_id", Integer, ForeignKey("productofabricado.id"), nullable=False)
-
-    producto_fabricado = relationship("ProductoFabricado", back_populates="variantes")
 
 # --- Lista de Materiales (BOM - Receta) ---
 class ListaMateriales(Base):

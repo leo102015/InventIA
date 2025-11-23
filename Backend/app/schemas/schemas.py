@@ -310,3 +310,40 @@ class OrdenVentaUpdate(BaseModel):
     estado: Optional[str] = None
     canal_venta_id: Optional[int] = None
     # No permitimos editar detalles por simplicidad en esta iteración, solo estado
+
+# --- MERCADO LIBRE ---
+
+class MeLiItemBase(BaseModel):
+    title: str
+    category_id: str # Ej. MLM1055
+    price: float
+    currency_id: str = "MXN"
+    available_quantity: int
+    buying_mode: str = "buy_it_now"
+    listing_type_id: str = "gold_special" # Clásica
+    condition: str = "new"
+    description: Optional[str] = None
+    picture_url: Optional[str] = None
+
+class MeLiPublishRequest(MeLiItemBase):
+    # IDs internos para saber qué estamos publicando
+    variante_id: Optional[int] = None
+    reventa_id: Optional[int] = None
+
+class MeLiUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    price: Optional[float] = None
+    available_quantity: Optional[int] = None
+    status: Optional[str] = None # 'active', 'paused'
+
+class ProductoSincronizacion(BaseModel):
+    unique_id: str # "var-1" o "rev-2"
+    tipo: str
+    id_db: int
+    nombre: str
+    precio: float
+    stock: int
+    meli_id: Optional[str] = None # Si tiene valor, ya está publicado
+    
+    class Config:
+        from_attributes = True

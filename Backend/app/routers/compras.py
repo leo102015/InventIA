@@ -50,7 +50,7 @@ def read_ordenes_compra(db: Session = Depends(get_db)):
     return db.query(models.OrdenCompra).order_by(models.OrdenCompra.fecha.desc()).all()
 
 # --- Recibir Orden (Actualizar Stock) ---
-router.put("/{orden_id}/recibir", response_model=schemas.OrdenCompraResponse)
+@router.put("/{orden_id}/recibir", response_model=schemas.OrdenCompraResponse)
 def recibir_orden_compra(orden_id: int, db: Session = Depends(get_db)):
     return update_orden_compra(orden_id, schemas.OrdenCompraUpdate(estado="Recibida"), db)
 
